@@ -35,7 +35,7 @@ module Draper
         factory = Factory.new
         object = double
 
-        expect(Factory::Worker).to receive(:new).with(anything(), object).and_return(->(*){})
+        expect(Factory::Worker).to receive(:new).with(anything(), object, anything()).and_return(->(*){})
         factory.decorate(object)
       end
 
@@ -44,7 +44,7 @@ module Draper
           decorator_class = double
           factory = Factory.new(with: decorator_class)
 
-          expect(Factory::Worker).to receive(:new).with(decorator_class, anything()).and_return(->(*){})
+          expect(Factory::Worker).to receive(:new).with(decorator_class, anything(), anything()).and_return(->(*){})
           factory.decorate(double)
         end
       end
@@ -53,7 +53,7 @@ module Draper
         it "passes nil to the worker" do
           factory = Factory.new
 
-          expect(Factory::Worker).to receive(:new).with(nil, anything()).and_return(->(*){})
+          expect(Factory::Worker).to receive(:new).with(nil, anything(), anything()).and_return(->(*){})
           factory.decorate(double)
         end
       end
@@ -97,7 +97,7 @@ module Draper
       it "calls the decorator method" do
         object = double
         options = {foo: "bar"}
-        worker = Factory::Worker.new(double, object)
+        worker = Factory::Worker.new(double, object, nil)
         decorator = ->(*){}
         allow(worker).to receive(:decorator){ decorator }
 
@@ -107,7 +107,7 @@ module Draper
 
       context "when the :context option is callable" do
         it "calls it" do
-          worker = Factory::Worker.new(double, double)
+          worker = Factory::Worker.new(double, double, nil)
           decorator = ->(*){}
           allow(worker).to receive_messages decorator: decorator
           context = {foo: "bar"}
@@ -117,7 +117,7 @@ module Draper
         end
 
         it "receives arguments from the :context_args option" do
-          worker = Factory::Worker.new(double, double)
+          worker = Factory::Worker.new(double, double, nil)
           allow(worker).to receive_messages decorator: ->(*){}
           context = ->{}
 
@@ -126,7 +126,7 @@ module Draper
         end
 
         it "wraps non-arrays passed to :context_args" do
-          worker = Factory::Worker.new(double, double)
+          worker = Factory::Worker.new(double, double, nil)
           allow(worker).to receive_messages decorator: ->(*){}
           context = ->{}
           hash = {foo: "bar"}
@@ -138,7 +138,7 @@ module Draper
 
       context "when the :context option is not callable" do
         it "doesn't call it" do
-          worker = Factory::Worker.new(double, double)
+          worker = Factory::Worker.new(double, double, nil)
           decorator = ->(*){}
           allow(worker).to receive_messages decorator: decorator
           context = {foo: "bar"}
@@ -149,7 +149,7 @@ module Draper
       end
 
       it "does not pass the :context_args option to the decorator" do
-        worker = Factory::Worker.new(double, double)
+        worker = Factory::Worker.new(double, double, nil)
         decorator = ->(*){}
         allow(worker).to receive_messages decorator: decorator
 
@@ -163,7 +163,7 @@ module Draper
         context "when decorator_class is specified" do
           it "returns the .decorate method from the decorator" do
             decorator_class = Class.new(Decorator)
-            worker = Factory::Worker.new(decorator_class, double)
+            worker = Factory::Worker.new(decorator_class, double, nil)
 
             expect(worker.decorator).to eq decorator_class.method(:decorate)
           end
@@ -174,9 +174,9 @@ module Draper
             it "returns the object's #decorate method" do
               object = double
               options = {foo: "bar"}
-              worker = Factory::Worker.new(nil, object)
+              worker = Factory::Worker.new(nil, object, nil)
 
-              expect(object).to receive(:decorate).with(options).and_return(:decorated)
+              expect(object).to receive(:decorate).with(options.merge(namespace: nil)).and_return(:decorated)
               expect(worker.decorator.call(object, options)).to be :decorated
             end
           end
@@ -184,7 +184,7 @@ module Draper
           context "and the object is not decoratable" do
             it "raises an error" do
               object = double
-              worker = Factory::Worker.new(nil, object)
+              worker = Factory::Worker.new(nil, object, nil)
 
               expect{worker.decorator}.to raise_error UninferrableDecoratorError
             end
@@ -196,7 +196,7 @@ module Draper
             object = Struct.new(:stuff).new("things")
 
             decorator_class = Class.new(Decorator)
-            worker = Factory::Worker.new(decorator_class, object)
+            worker = Factory::Worker.new(decorator_class, object, nil)
 
             expect(worker.decorator).to eq decorator_class.method(:decorate)
           end
@@ -207,7 +207,7 @@ module Draper
         context "when decorator_class is a CollectionDecorator" do
           it "returns the .decorate method from the collection decorator" do
             decorator_class = Class.new(CollectionDecorator)
-            worker = Factory::Worker.new(decorator_class, [])
+            worker = Factory::Worker.new(decorator_class, [], nil)
 
             expect(worker.decorator).to eq decorator_class.method(:decorate)
           end
@@ -216,7 +216,7 @@ module Draper
         context "when decorator_class is a Decorator" do
           it "returns the .decorate_collection method from the decorator" do
             decorator_class = Class.new(Decorator)
-            worker = Factory::Worker.new(decorator_class, [])
+            worker = Factory::Worker.new(decorator_class, [], nil)
 
             expect(worker.decorator).to eq decorator_class.method(:decorate_collection)
           end
@@ -229,7 +229,7 @@ module Draper
               decorator_class = Class.new(Decorator)
               allow(object).to receive(:decorator_class){ decorator_class }
               allow(object).to receive(:decorate){ nil }
-              worker = Factory::Worker.new(nil, object)
+              worker = Factory::Worker.new(nil, object, nil)
 
               expect(decorator_class).to receive(:decorate_collection).with(object, foo: "bar", with: nil).and_return(:decorated)
               expect(worker.decorator.call(object, foo: "bar")).to be :decorated
@@ -238,7 +238,7 @@ module Draper
 
           context "and the object is not decoratable" do
             it "returns the .decorate method from CollectionDecorator" do
-              worker = Factory::Worker.new(nil, [])
+              worker = Factory::Worker.new(nil, [], nil)
 
               expect(worker.decorator).to eq CollectionDecorator.method(:decorate)
             end
