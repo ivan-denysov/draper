@@ -3,7 +3,6 @@ require 'support/shared_examples/decoratable_equality'
 
 module Draper
   describe Decoratable do
-
     describe "#decorate" do
       it "returns a decorator for self" do
         product = Product.new
@@ -11,7 +10,7 @@ module Draper
 
         expect(decorator).to be_a ProductDecorator
         expect(decorator.object).to be product
-     end
+      end
 
       it "accepts context" do
         context = {some: "context"}
@@ -238,6 +237,5 @@ module Draper
         end
       end
     end
-
   end
 end
