@@ -2,6 +2,7 @@
 
 [![TravisCI Build Status](https://travis-ci.org/drapergem/draper.svg?branch=master)](http://travis-ci.org/drapergem/draper)
 [![Code Climate](https://codeclimate.com/github/drapergem/draper.svg)](https://codeclimate.com/github/drapergem/draper)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/0d40c43951d516bf6985/test_coverage)](https://codeclimate.com/github/drapergem/draper/test_coverage)
 [![Inline docs](http://inch-ci.org/github/drapergem/draper.svg?branch=master)](http://inch-ci.org/github/drapergem/draper)
 
 Draper adds an object-oriented layer of presentation logic to your Rails
@@ -379,7 +380,7 @@ can continue to use the `@article` instance variable to manipulate the model -
 for example, `@article.comments.build` to add a new blank comment for a form.
 
 ## Configuration
-Draper works out the box well, but also provides a hook for you to configure its 
+Draper works out the box well, but also provides a hook for you to configure its
 default functionality. For example, Draper assumes you have a base `ApplicationController`.
 If your base controller is named something different (e.g. `BaseController`),
 you can tell Draper to use it by adding the following to an initializer:
@@ -468,11 +469,28 @@ end
 ```
 
 Then you can stub the specific route helper functions you need using your
-preferred stubbing technique (this example uses RSpec's `stub` method):
+preferred stubbing technique. This examples uses Rspec currently recommended API
+available in RSpec 3.6+
 
 ```ruby
-helpers.stub(users_path: '/users')
+without_partial_double_verification do
+  allow(helpers).to receive(:users_path).and_return('/users')
+end
 ```
+
+### View context leakage
+As mentioned before, Draper needs to build a view context to access helper methods. In MiniTest, the view context is
+cleared during `before_setup` preventing any view context leakage. In RSpec, the view context is cleared before each
+`decorator`, `controller`, and `mailer` spec. However, if you use decorators in other types of specs
+(e.g. `job`), you may still experience the view context leaking from the previous spec. To solve this, add the
+following to your `spec_helper` for each type of spec you are experiencing the leakage:
+
+```ruby
+config.before(:each, type: :type) { Draper::ViewContext.clear! }
+```
+
+_Note_: The `:type` above is just a placeholder. Replace `:type` with the type of spec you are experiencing
+the leakage from.
 
 ## Advanced usage
 
@@ -631,7 +649,7 @@ you can include this module manually.
 
 ### Active Job Integration
 
-[Active Job](http://edgeguides.rubyonrails.org/active_job_basics.html) allows you to pass ActiveRecord 
+[Active Job](http://edgeguides.rubyonrails.org/active_job_basics.html) allows you to pass ActiveRecord
 objects to background tasks directly and performs the necessary serialization and deserialization. In
 order to do this, arguments to a background job must implement [Global ID](https://github.com/rails/globalid).
 Decorated objects implement Global ID by delegating to the object they are decorating. This means

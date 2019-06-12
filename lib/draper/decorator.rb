@@ -12,7 +12,8 @@ module Draper
 
     # @return the object being decorated.
     attr_reader :object
-    alias_method :model, :object
+
+    alias :model :object
 
     # @return [Hash] extra data to be used in user-defined methods.
     attr_accessor :context
@@ -36,7 +37,7 @@ module Draper
     end
 
     class << self
-      alias_method :decorate, :new
+      alias :decorate :new
     end
 
     # Automatically delegates instance methods to the source object. Class
@@ -191,7 +192,8 @@ module Draper
     def kind_of?(klass)
       super || object.kind_of?(klass)
     end
-    alias_method :is_a?, :kind_of?
+
+    alias :is_a? :kind_of?
 
     # Checks if `self.instance_of?(klass)` or `object.instance_of?(klass)`
     #
@@ -230,7 +232,7 @@ module Draper
     # @return [Class] the class created by {decorate_collection}.
     def self.collection_decorator_class
       name = collection_decorator_name
-      name_constant = name && name.safe_constantize
+      name_constant = name&.safe_constantize
 
       name_constant || Draper::CollectionDecorator
     end
@@ -253,7 +255,7 @@ module Draper
 
     def self.inferred_object_class
       name = object_class_name
-      name_constant = name && name.safe_constantize
+      name_constant = name&.safe_constantize
       return name_constant unless name_constant.nil?
 
       raise Draper::UninferrableObjectError.new(self)
@@ -261,7 +263,7 @@ module Draper
 
     def self.collection_decorator_name
       singular = object_class_name
-      plural = singular && singular.pluralize
+      plural = singular&.pluralize
 
       "#{plural}Decorator" unless plural == singular
     end
